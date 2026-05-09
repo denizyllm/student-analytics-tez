@@ -1,54 +1,49 @@
 import streamlit as st
 import pandas as pd
-import json
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from groq import Groq 
 
 from sklearn.linear_model import LinearRegression
+from supabase import create_client, Client
 
 
 st.set_page_config(page_title="Student Analytics Platform", layout="wide")
 
 
-DB_FILE = "student_analytics_db.json"
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def save_data():
     current_user = st.session_state.get('current_user', 'default')
-    db_data = {}
     
-    
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, 'r', encoding='utf-8') as f:
-            try:
-                db_data = json.load(f)
-            except:
-                pass
-    
-    
-    db_data[current_user] = {
-        'classes': st.session_state.get('classes', {}),
-        'students': st.session_state.get('students', {})
+    data = {
+        "username": current_user,
+        "classes": st.session_state.get('classes', {}),
+        "students": st.session_state.get('students', {})
     }
     
-    with open(DB_FILE, 'w', encoding='utf-8') as f:
-        json.dump(db_data, f, ensure_ascii=False, indent=4)
+    try:
+        supabase.table("user_data").upsert(data).execute()
+    except Exception as e:
+        st.error(f"Veritabanı kayıt hatası: {e}")
 
 def load_data():
     current_user = st.session_state.get('current_user', 'default')
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, 'r', encoding='utf-8') as f:
-            try:
-                db_data = json.load(f)
-                
-                user_data = db_data.get(current_user, {})
-                st.session_state['classes'] = user_data.get('classes', {})
-                st.session_state['students'] = user_data.get('students', {})
-            except:
-                st.session_state['classes'], st.session_state['students'] = {}, {}
-    else:
+    try:
+        response = supabase.table("user_data").select("*").eq("username", current_user).execute()
+        
+        if len(response.data) > 0:
+            user_data = response.data[0]
+            st.session_state['classes'] = user_data.get('classes', {})
+            st.session_state['students'] = user_data.get('students', {})
+        else:
+            st.session_state['classes'], st.session_state['students'] = {}, {}
+    except Exception as e:
         st.session_state['classes'], st.session_state['students'] = {}, {}
+        st.error(f"Veritabanı okuma hatası: {e}")
 
 def train_ai_model():
     try:
