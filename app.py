@@ -332,6 +332,7 @@ else:
 
 
                 edited_df = st.data_editor(df, use_container_width=True, hide_index=True,
+                                          column_order=["ID", "Name", "Absences", "G1", "G2", "G3", "Total Score", "Status", "AI Final Prediction"],
                                           disabled=["ID", "Name", "Total Score", "Status", "AI Final Prediction"])
                 
                 if st.button("💾 Save All Changes"):
