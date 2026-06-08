@@ -385,7 +385,7 @@ else:
                     if model:
                         fig4, ax4 = plt.subplots(figsize=(6, 4))
                         importance = model.coef_
-                        features_names = ['Grade Potantial', 'Absences']
+                        features_names = ['Grade Potential', 'Absences']
                         sns.barplot(x=features_names, y=importance, palette="viridis", ax=ax4)
                         ax4.axhline(0, color='black', linestyle='-', linewidth=0.8)
                         ax4.set_title("What drives the AI's prediction?")
